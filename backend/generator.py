@@ -228,6 +228,9 @@ def generate_playlist_stream(
         chunks = [filtered_tracks[i : i + CHUNK_SIZE] for i in range(0, len(filtered_tracks), CHUNK_SIZE)]
         chunks_to_process = chunks[:MAX_ITERATIONS]
         last_response = None
+        total_input_tokens = 0
+        total_output_tokens = 0
+        total_cost = 0.0
 
         for idx, chunk in enumerate(chunks_to_process):
             yield emit("progress", {
@@ -266,6 +269,9 @@ def generate_playlist_stream(
             try:
                 response = llm_client.generate(generation_prompt, GENERATION_SYSTEM)
                 last_response = response
+                total_input_tokens += response.input_tokens
+                total_output_tokens += response.output_tokens
+                total_cost += response.estimated_cost()
                 logger.info("LLM response received (chunk %d/%d): %d input, %d output tokens", idx+1, len(chunks_to_process), response.input_tokens, response.output_tokens)
                 
                 chunk_selections = llm_client.parse_json_response(response)
@@ -334,8 +340,8 @@ def generate_playlist_stream(
         try:
             result = GenerateResponse(
                 tracks=matched_tracks,
-                token_count=response.total_tokens if response else 0,
-                estimated_cost=response.estimated_cost() if response else 0,
+                token_count=total_input_tokens + total_output_tokens,
+                estimated_cost=total_cost,
                 playlist_title=playlist_title,
                 narrative=narrative,
                 track_reasons=track_reasons,

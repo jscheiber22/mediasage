@@ -92,7 +92,6 @@ const state = {
     availableDecades: [],
     selectedGenres: [],
     selectedDecades: [],
-    trackCount: 25,
     excludeLive: true,
     maxTracksToAI: 500,  // 0 = no limit
     minRating: 0,  // 0 = any, 2/4/6/8 = 1/2/3/4 stars minimum
@@ -1176,12 +1175,6 @@ function updateFilters() {
         decadeContainer.querySelector(`[data-decade="${CSS.escape(focusedDecade)}"]`)?.focus();
     }
 
-    // Update track count buttons
-    document.querySelectorAll('.count-btn').forEach(btn => {
-        const isActive = parseInt(btn.dataset.count) === state.trackCount;
-        btn.classList.toggle('active', isActive);
-        btn.setAttribute('aria-pressed', isActive ? 'true' : 'false');
-    });
 
     // Update max tracks to AI buttons
     const maxAllowed = state.config?.max_tracks_to_ai || 3500;
@@ -1376,7 +1369,6 @@ async function updateFilterPreview() {
         const requestBody = {
             genres: allGenresSelected() ? [] : state.selectedGenres,
             decades: allDecadesSelected() ? [] : state.selectedDecades,
-            track_count: state.trackCount,
             max_tracks_to_ai: state.maxTracksToAI,
             min_rating: state.minRating,
             exclude_live: state.excludeLive,
@@ -1486,7 +1478,6 @@ function recalculateCostDisplay() {
     const analysis_input = 1100;
     const analysis_output = 300;
     const gen_input = tracks_to_send * 40;
-    const gen_output = state.trackCount * 60;
 
     // Analysis model cost (e.g. Sonnet)
     const analysis_in_rate = state.config.analysis_cost_per_million_input ?? state.config.cost_per_million_input;
@@ -2640,14 +2631,6 @@ function setupEventListeners() {
         updateFilterPreview();
     });
 
-    // Track count (local recalculation - no API call needed)
-    document.querySelectorAll('.count-btn').forEach(btn => {
-        btn.addEventListener('click', () => {
-            state.trackCount = parseInt(btn.dataset.count);
-            updateFilters();
-            recalculateCostDisplay();
-        });
-    });
 
     // Note: limit-btn listeners are set up dynamically in updateTrackLimitButtons()
 
@@ -3062,7 +3045,6 @@ async function handleGenerate() {
     const request = {
         genres: allGenresSelected() ? [] : state.selectedGenres,
         decades: allDecadesSelected() ? [] : state.selectedDecades,
-        track_count: state.trackCount,
         exclude_live: state.excludeLive,
         min_rating: state.minRating,
         max_tracks_to_ai: state.maxTracksToAI,

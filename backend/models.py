@@ -50,7 +50,7 @@ class FilterSet(BaseModel):
 
     genres: list[str] = []
     decades: list[str] = []
-    track_count: int = 25
+    track_count: int = Field(25, description="Target or maximum number of tracks to select")
     exclude_live: bool = True
 
     @field_validator("track_count")
@@ -228,7 +228,7 @@ class GenerateRequest(BaseModel):
     refinement_answers: list[str | None] | None = None
     genres: list[str]
     decades: list[str]
-    track_count: int = 25
+    track_count: int = Field(25, description="Target or maximum number of tracks to select")
     exclude_live: bool = True
     min_rating: int = 0  # 0 = any, 2/4/6/8/10 = minimum rating
     max_tracks_to_ai: int = 500  # 0 = no limit

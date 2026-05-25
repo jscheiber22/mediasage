@@ -697,8 +697,11 @@ async def preview_filters(request: FilterPreviewRequest) -> FilterPreviewRespons
     # - Analysis call (model_analysis): ~700 input, ~100 output
     # - Generation call (model_generation): ~(tracks * 40) input, ~(track_count * 60) output
     # - Narrative call (model_analysis): ~400 input, ~200 output
-    analysis_input = 1100  # analysis (700) + narrative (400)
-    analysis_output = 300  # analysis (100) + narrative (200)
+    # Since tracks are chunked to respect context limits, we multiply the base
+    # costs (input/output) by the approximate number of chunks.
+    num_chunks = max(1, (tracks_to_send + 49) // 50)  # Assuming chunk size of ~50 tracks
+    analysis_input = 1100 * num_chunks  # analysis (700) + narrative (400)
+    analysis_output = 300 * num_chunks  # analysis (100) + narrative (200)
     generation_input = tracks_to_send * 40
     generation_output = request.track_count * 60  # ~60 tokens per track in response
 
