@@ -215,56 +215,70 @@ def generate_playlist_stream(
         else:
             yield emit("progress", {"step": "filtering", "message": f"Using {len(filtered_tracks)} random tracks..."})
 
-        # Step 3: Build track list
+        # Step 3: Build track list and prepare iterative selection
         yield emit("progress", {"step": "preparing", "message": f"Preparing {len(filtered_tracks)} tracks for AI..."})
 
-        track_list = "\n".join(
-            f"{i+1}. {t.artist} - {t.title} ({t.album}, {t.year or 'Unknown year'})"
-            for i, t in enumerate(filtered_tracks)
-        )
+        # Iterative chunking approach: split tracks into manageable chunks to improve LLM reasoning
+        CHUNK_SIZE = 100
+        MIN_PER_CHUNK = 5
+        MAX_PER_CHUNK = 10
+        MAX_ITERATIONS = 15
+        
+        all_track_selections = []
+        chunks = [filtered_tracks[i : i + CHUNK_SIZE] for i in range(0, len(filtered_tracks), CHUNK_SIZE)]
+        chunks_to_process = chunks[:MAX_ITERATIONS]
+        last_response = None
 
-        # Build the generation prompt
-        generation_parts = []
+        for idx, chunk in enumerate(chunks_to_process):
+            yield emit("progress", {
+                "step": "ai_working", 
+                "message": f"Analyzing part {idx + 1} of {len(chunks_to_process)}..."
+            })
 
-        if prompt:
-            generation_parts.append(f"User's request: {prompt}")
-
-        if seed_track:
-            generation_parts.append(
-                f"Seed track: {seed_track.title} by {seed_track.artist} "
-                f"(from {seed_track.album}, {seed_track.year or 'Unknown year'})"
+            track_list = "\n".join(
+                f"{i+1}. {t.artist} - {t.title} ({t.album}, {t.year or 'Unknown year'})"
+                for i, t in enumerate(chunk)
             )
-            if selected_dimensions:
-                generation_parts.append(f"Explore these dimensions: {', '.join(selected_dimensions)}")
 
-        if additional_notes:
-            generation_parts.append(f"Additional notes: {additional_notes}")
+            # Build the generation prompt for this chunk
+            generation_parts = []
+            if prompt:
+                generation_parts.append(f"User's request: {prompt}")
+            if seed_track:
+                generation_parts.append(
+                    f"Seed track: {seed_track.title} by {seed_track.artist} "
+                    f"(from {seed_track.album}, {seed_track.year or 'Unknown year'})"
+                )
+                if selected_dimensions:
+                    generation_parts.append(f"Explore these dimensions: {', '.join(selected_dimensions)}")
+            if additional_notes:
+                generation_parts.append(f"Additional notes: {additional_notes}")
+            if refinement_answers:
+                answered = [a for a in refinement_answers if a]
+                if answered:
+                    generation_parts.append(f"User preferences: {', '.join(answered)}")
 
-        if refinement_answers:
-            answered = [a for a in refinement_answers if a]
-            if answered:
-                generation_parts.append(f"User preferences: {', '.join(answered)}")
+            generation_parts.append(f"\nSelect between {MIN_PER_CHUNK} and {MAX_PER_CHUNK} tracks from this list:\n{track_list}")
+            generation_prompt = "\n\n".join(generation_parts)
 
-        generation_parts.append(f"\nSelect {track_count} tracks from this library:\n{track_list}")
+            logger.info("Calling LLM (chunk %d/%d) with prompt length: %d chars", idx+1, len(chunks_to_process), len(generation_prompt))
+            
+            try:
+                response = llm_client.generate(generation_prompt, GENERATION_SYSTEM)
+                last_response = response
+                logger.info("LLM response received (chunk %d/%d): %d input, %d output tokens", idx+1, len(chunks_to_process), response.input_tokens, response.output_tokens)
+                
+                chunk_selections = llm_client.parse_json_response(response)
+                if isinstance(chunk_selections, list):
+                    all_track_selections.extend(chunk_selections)
+                else:
+                    logger.warning("Chunk %d returned invalid format. Skipping.", idx)
+            except Exception as e:
+                logger.error("Error during LLM call for chunk %d: %s", idx, e)
+                continue
 
-        generation_prompt = "\n\n".join(generation_parts)
-
-        # Step 4: Call LLM
-        yield emit("progress", {"step": "ai_working", "message": "AI is curating your playlist..."})
-
-        logger.info("Calling LLM with prompt length: %d chars", len(generation_prompt))
-        response = llm_client.generate(generation_prompt, GENERATION_SYSTEM)
-        logger.info("LLM response received: %d input, %d output tokens", response.input_tokens, response.output_tokens)
-
-        # Step 5: Parse response
-        yield emit("progress", {"step": "parsing", "message": "Parsing AI selections..."})
-
-        track_selections = llm_client.parse_json_response(response)
-
-        if not isinstance(track_selections, list):
-            yield emit("error", {"message": "LLM returned invalid track selection format"})
-            return
-
+        track_selections = all_track_selections
+        
         # Step 6: Match tracks
         yield emit("progress", {"step": "matching", "message": f"Matching {len(track_selections)} selections to library..."})
 
@@ -313,15 +327,15 @@ def generate_playlist_stream(
         logger.info("Emitting 'Playlist ready!' progress event")
         yield emit("progress", {"step": "complete", "message": "Playlist ready!"})
 
-        logger.info("Building GenerateResponse: tokens=%s, cost=%s",
-                    getattr(response, 'total_tokens', 'N/A'),
-                    response.estimated_cost() if response else 'N/A')
+        # We need to handle the response object for token/cost tracking.
+        # Since we used multiple calls, we'll use the last successful response.
+        response = last_response if last_response else None
 
         try:
             result = GenerateResponse(
                 tracks=matched_tracks,
-                token_count=response.total_tokens,
-                estimated_cost=response.estimated_cost(),
+                token_count=response.total_tokens if response else 0,
+                estimated_cost=response.estimated_cost() if response else 0,
                 playlist_title=playlist_title,
                 narrative=narrative,
                 track_reasons=track_reasons,
@@ -391,6 +405,7 @@ def generate_playlist_stream(
     except Exception as e:
         logger.exception("Error during playlist generation")
         yield emit("error", {"message": str(e)})
+
 
 
 GENERATION_SYSTEM = """You are a music curator creating a playlist from a user's music library.
