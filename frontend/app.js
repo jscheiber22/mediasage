@@ -1195,6 +1195,14 @@ function updateFilters() {
         btn.classList.toggle('active', isActive);
         btn.setAttribute('aria-pressed', isActive ? 'true' : 'false');
     });
+
+    // Update max tracks info text
+    const min = Math.ceil(state.maxTracksToAI * 0.05);
+    const max = Math.ceil(state.maxTracksToAI * 0.10);
+    const infoElem = document.getElementById('max-tracks-info');
+    if (infoElem) {
+        infoElem.innerText = `Provides playlist of ${min} to ${max} tracks.`;
+    }
 }
 
 function updateModelSuggestion() {
@@ -3193,6 +3201,12 @@ async function loadSettings() {
         if (state.config.max_tracks_to_ai) {
             state.maxTracksToAI = Math.min(state.maxTracksToAI, state.config.max_tracks_to_ai);
             updateTrackLimitButtons();
+            const min = Math.ceil(state.maxTracksToAI * 0.05);
+            const max = Math.ceil(state.maxTracksToAI * 0.10);
+            const infoElem = document.getElementById('max-tracks-info');
+            if (infoElem) {
+                infoElem.innerText = `Provides playlist of ${min} to ${max} tracks.`;
+            }
         }
         if (state.config.max_albums_to_ai) {
             state.rec.maxAlbumsToAI = Math.min(state.rec.maxAlbumsToAI, state.config.max_albums_to_ai);
