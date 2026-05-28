@@ -42,6 +42,8 @@ services:
       #- CUSTOM_LLM_URL=https://openrouter.ai/api/v1
       #- CUSTOM_LLM_API_KEY=sk-or-your-key
       #- CUSTOM_CONTEXT_WINDOW=32768
+    env_file:
+      - stack.env
     volumes:
       # Just use a docker volume
       - mediasage-data:/app/data
@@ -52,3 +54,5 @@ services:
       # Optional: persist UI settings
       # - ./config.user.yaml:/app/config.user.yaml
     restart: unless-stopped
+volumes:
+  mediasage-data:
