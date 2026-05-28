@@ -43,10 +43,12 @@ services:
       #- CUSTOM_LLM_API_KEY=sk-or-your-key
       #- CUSTOM_CONTEXT_WINDOW=32768
     volumes:
+      # Just use a docker volume
+      - mediasage-data:/app/data
       # Persist library cache across restarts
       # Ensure directory is writable: either set 'user' above, or run:
       #   mkdir -p ./data && chmod 777 ./data
-      - ./data:/app/data
+      # - ./data:/app/data
       # Optional: persist UI settings
       # - ./config.user.yaml:/app/config.user.yaml
     restart: unless-stopped
