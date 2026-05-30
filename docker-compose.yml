@@ -1,10 +1,11 @@
 services:
   mediasage:
-    image: ecwilson/mediasage:latest
+    # image: ecwilson/mediasage:latest
     # Alternative registries:
     # image: ghcr.io/ecwilsonaz/mediasage:latest
     # To build locally instead, comment out 'image' and uncomment 'build':
-    # build: .
+    # uncommented to build in portainer from repo pull
+    build: .
     container_name: mediasage
     # Optional: Run as specific user for NAS/Synology (use your PUID:PGID)
     # user: "1000:1000"
