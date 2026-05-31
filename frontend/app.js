@@ -3050,13 +3050,13 @@ async function handleContinueToFilters() {
 
 async function handleGenerate() {
     // All selected = no filter (avoids excluding untagged tracks)
-    const request = {
-        genres: allGenresSelected() ? [] : state.selectedGenres,
-        decades: allDecadesSelected() ? [] : state.selectedDecades,
-        exclude_live: state.excludeLive,
-        min_rating: state.minRating,
-        max_tracks_to_ai: state.maxTracksToAI,
-    };
+        const request = {
+            genres: allGenresSelected() ? [] : state.selectedGenres,
+            decades: allDecadesSelected() ? [] : state.selectedDecades,
+            exclude_live: state.excludeLive,
+            min_rating: state.minRating,
+            track_count: state.maxTracksToAI,
+        };
 
     if (state.mode === 'prompt') {
         request.prompt = state.prompt;

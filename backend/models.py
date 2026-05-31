@@ -53,13 +53,6 @@ class FilterSet(BaseModel):
     track_count: int = Field(25, description="Target or maximum number of tracks to select")
     exclude_live: bool = True
 
-    @field_validator("track_count")
-    @classmethod
-    def validate_track_count(cls, v: int) -> int:
-        if v not in [15, 25, 50, 100]:
-            raise ValueError("track_count must be 15, 25, 50, or 100")
-        return v
-
 
 class Playlist(BaseModel):
     """A generated playlist with tracks and metadata."""
@@ -228,7 +221,7 @@ class GenerateRequest(BaseModel):
     refinement_answers: list[str | None] | None = None
     genres: list[str]
     decades: list[str]
-    track_count: int = Field(25, description="Target or maximum number of tracks to select")
+    track_count: int = Field(500, description="Target or maximum number of tracks to select")
     exclude_live: bool = True
     min_rating: int = 0  # 0 = any, 2/4/6/8/10 = minimum rating
     max_tracks_to_ai: int = 500  # 0 = no limit

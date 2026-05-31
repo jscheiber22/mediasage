@@ -153,10 +153,10 @@ def generate_playlist_stream(
     refinement_answers: list[str | None] | None = None,
     genres: list[str] | None = None,
     decades: list[str] | None = None,
-    track_count: int = 25,
+    track_count: int = 100,
     exclude_live: bool = True,
     min_rating: int = 0,
-    max_tracks_to_ai: int = 500,
+    max_tracks_to_ai: int = 0,
 ) -> Generator[str, None, None]:
     """Generate a playlist with streaming progress updates.
 
@@ -222,10 +222,10 @@ def generate_playlist_stream(
         CHUNK_SIZE = 100
         MIN_PER_CHUNK = 5
         MAX_PER_CHUNK = 10
-        MAX_ITERATIONS = 15
         
         all_track_selections = []
         chunks = [filtered_tracks[i : i + CHUNK_SIZE] for i in range(0, len(filtered_tracks), CHUNK_SIZE)]
+        MAX_ITERATIONS = len(chunks)
         chunks_to_process = chunks[:MAX_ITERATIONS]
         last_response = None
         total_input_tokens = 0

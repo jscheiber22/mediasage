@@ -5,6 +5,12 @@
 [![GHCR](https://img.shields.io/badge/ghcr-ecwilsonaz%2Fmediasage-blue)](https://ghcr.io/ecwilsonaz/mediasage)
 [![Python 3.14+](https://img.shields.io/badge/python-3.14+-blue.svg)](https://www.python.org/downloads/)
 
+## Recent Updates (Fork)
+
+* **Iterative Chunking**: Implemented chunked processing in `backend/generator.py` to handle large libraries without exceeding LLM context windows.
+* **Unlimited Playlist Size**: Removed arbitrary hardcoded track limits, allowing the application to dynamically scale based on your library and chosen AI provider.
+
+
 **AI-powered playlists and album recommendations for Plex—using only music you actually own.**
 
 MediaSage is a self-hosted web app that creates playlists and recommends albums by combining LLM intelligence with your Plex library. Every suggestion is guaranteed playable because it only considers music you have.
