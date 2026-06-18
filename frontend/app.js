@@ -3055,7 +3055,7 @@ async function handleGenerate() {
             decades: allDecadesSelected() ? [] : state.selectedDecades,
             exclude_live: state.excludeLive,
             min_rating: state.minRating,
-            track_count: state.maxTracksToAI,
+            max_tracks_to_ai: state.maxTracksToAI,
         };
 
     if (state.mode === 'prompt') {
