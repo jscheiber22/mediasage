@@ -1486,6 +1486,8 @@ function recalculateCostDisplay() {
     const analysis_input = 1100;
     const analysis_output = 300;
     const gen_input = tracks_to_send * 40;
+    // ~7.5 selections per 100-track chunk × 60 tokens/selection (matches generator.py chunking)
+    const gen_output = Math.ceil(tracks_to_send * 0.075) * 60;
 
     // Analysis model cost (e.g. Sonnet)
     const analysis_in_rate = state.config.analysis_cost_per_million_input ?? state.config.cost_per_million_input;

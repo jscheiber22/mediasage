@@ -1673,14 +1673,26 @@ if frontend_path.exists():
     )
 
 
+def _compute_asset_cache_buster() -> str:
+    # mtime-based so rebuilds always invalidate, even when APP_VERSION is "dev"
+    parts = []
+    for name in ("app.js", "style.css"):
+        p = frontend_path / name
+        if p.exists():
+            parts.append(str(int(p.stat().st_mtime)))
+    return "-".join(parts) or get_version()
+
+
+_ASSET_V = _compute_asset_cache_buster()
+
+
 @app.get("/")
 async def serve_index():
     """Serve the main index.html page with cache-busted asset URLs."""
     index_path = frontend_path / "index.html"
     if index_path.exists():
         html = index_path.read_text()
-        v = get_version()
-        html = html.replace("/static/style.css", f"/static/style.css?v={v}")
-        html = html.replace("/static/app.js", f"/static/app.js?v={v}")
+        html = html.replace("/static/style.css", f"/static/style.css?v={_ASSET_V}")
+        html = html.replace("/static/app.js", f"/static/app.js?v={_ASSET_V}")
         return HTMLResponse(html, headers={"Cache-Control": "no-cache"})
     return {"message": "MediaSage API is running. Frontend not found."}
